@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Spatie\Activitylog\Contracts\Activity as ActivityContract;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Request;
 
 class Activity extends Model implements ActivityContract
 {
@@ -17,6 +19,37 @@ class Activity extends Model implements ActivityContract
     protected $casts = [
         'properties' => 'collection',
     ];
+
+    protected static function boot()
+    {
+        Activity::saving(function ($model) {
+            $model->url = $model->resolveUrl();
+            $model->user_agent = $model->resolveUserAgent();
+            $model->ip = $model->resolveIp();
+        });
+    }
+
+    public function resolveIp()
+    {
+        return Request::ip();
+    }
+
+    public function resolveUserAgent()
+    {
+        return Request::header('User-Agent');
+    }
+
+    public function resolveUrl()
+    {
+        if (!App::runningInConsole()) {
+            return Request::fullUrlWithQuery([]);
+        }
+        if (in_array('schedule:run', $_SERVER['argv'])) {
+            return 'scheduler';
+        }
+
+        return 'console';
+    }
 
     public function __construct(array $attributes = [])
     {
