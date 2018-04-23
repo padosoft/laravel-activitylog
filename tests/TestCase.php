@@ -58,7 +58,7 @@ abstract class TestCase extends OrchestraTestCase
         $this->createActivityLogTable();
 
         $this->createTables('articles', 'users');
-        $this->seedModels(Article::class, User::class);
+        $this->seedModels(User::class,Article::class);
     }
 
     protected function resetDatabase()
@@ -101,7 +101,12 @@ abstract class TestCase extends OrchestraTestCase
     {
         collect($modelClasses)->each(function (string $modelClass) {
             foreach (range(1, 0) as $index) {
-                $modelClass::create(['name' => "name {$index}"]);
+                if ($modelClass==Article::class){
+                    $causer = User::first();
+                    $modelClass::create(['name' => "name {$index}",'user_id'=>$causer->id]);
+                }else {
+                    $modelClass::create(['name' => "name {$index}"]);
+                }
             }
         });
     }

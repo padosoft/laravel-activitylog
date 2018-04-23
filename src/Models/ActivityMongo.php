@@ -3,14 +3,18 @@
 namespace Spatie\Activitylog\Models;
 
 use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Model as Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Spatie\Activitylog\Contracts\Activity as ActivityContract;
+use Spatie\Activitylog\Traits\RelationshipsTrait;
 
-class Activity extends Model implements ActivityContract
+class ActivityMongo extends Model implements ActivityContract
 {
+    use RelationshipsTrait;
     protected $table;
+
+    protected $collection = 'activity_log';
 
     public $guarded = [];
 
@@ -20,7 +24,10 @@ class Activity extends Model implements ActivityContract
 
     public function __construct(array $attributes = [])
     {
-        $this->table = config('activitylog.table_name');
+        $this->collection = config('activitylog.table_name');
+        if (config('activitylog.connection', null) !== null) {
+            $this->connection = config('activitylog.connection', null);
+        }
 
         parent::__construct($attributes);
     }
@@ -79,7 +86,7 @@ class Activity extends Model implements ActivityContract
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeCausedBy(Builder $query, Model $causer): Builder
+    public function scopeCausedBy(Builder $query, \Illuminate\Database\Eloquent\Model $causer): Builder
     {
         return $query
             ->where('causer_type', $causer->getMorphClass())
@@ -94,7 +101,7 @@ class Activity extends Model implements ActivityContract
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeForSubject(Builder $query, Model $subject): Builder
+    public function scopeForSubject(Builder $query, \Illuminate\Database\Eloquent\Model $subject): Builder
     {
         return $query
             ->where('subject_type', $subject->getMorphClass())

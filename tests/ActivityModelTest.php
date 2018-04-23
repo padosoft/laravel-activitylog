@@ -2,9 +2,12 @@
 
 namespace Spatie\Activitylog\Test;
 
+use Auth;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Test\Models\User;
+use Spatie\Activitylog\Test\Models\UserWithRelations;
 use Spatie\Activitylog\Test\Models\Article;
+use Spatie\Activitylog\Test\Models\ArticleWithRelations;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 class ActivityModelTest extends TestCase
@@ -84,9 +87,44 @@ class ActivityModelTest extends TestCase
         $activities = Activity::forSubject($subject)->get();
 
         $this->assertCount(1, $activities);
+
         $this->assertEquals($subject->getKey(), $activities->first()->subject_id);
         $this->assertEquals(get_class($subject), $activities->first()->subject_type);
+
+
+
         $this->assertEquals('Foo', $activities->first()->description);
+    }
+
+    /** @test */
+    public function it_provides_a_scope_to_get_all_log_items_related_to_subject()
+    {
+        $subject = ArticleWithRelations::first();
+        $causer = UserWithRelations::first();
+        $user2 = User::create([
+            'name'=>'another user'
+        ]);
+        Auth::login($causer);
+
+        activity()->on($subject)->by($causer)->log('Foo');
+        $Article=ArticleWithRelations::create([
+            'name' => 'Another article',
+            'user_id' => $user2->id,
+        ]);
+        //var_dump(Activity::allRelations($user2)->toSql());
+        //\DB::enableQueryLog();
+        $activities = Activity::allRelations($user2)->get();
+        //var_dump(\DB::getQueryLog());
+
+        $this->assertCount(1, $activities);
+
+
+        $this->assertRegexp('/users":"'.$user2->id.'"/',json_encode($activities->first()->properties));
+        $this->assertEquals($causer->getKey(), $activities->first()->causer_id);
+        $this->assertEquals(get_class($causer), $activities->first()->causer_type);
+        $this->assertEquals($Article->getKey(), $activities->first()->subject_id);
+        $this->assertEquals(get_class($Article), $activities->first()->subject_type);
+        $this->assertEquals('created', $activities->first()->description);
     }
 
     /** @test */

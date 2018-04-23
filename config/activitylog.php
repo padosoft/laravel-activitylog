@@ -41,4 +41,5 @@ return [
      * used by the Activity model shipped with this package.
      */
     'table_name' => 'activity_log',
+    'connection' => null,
 ];
