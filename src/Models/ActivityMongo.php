@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Spatie\Activitylog\Contracts\Activity as ActivityContract;
 use Spatie\Activitylog\Traits\RelationshipsTrait;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Request;
 
 class ActivityMongo extends Model implements ActivityContract
 {
@@ -34,7 +36,7 @@ class ActivityMongo extends Model implements ActivityContract
 
     protected static function boot()
     {
-        Activity::saving(function ($model) {
+        ActivityMongo::saving(function ($model) {
             $model->url = $model->resolveUrl();
             $model->user_agent = $model->resolveUserAgent();
             $model->ip = $model->resolveIp();
