@@ -32,6 +32,37 @@ class ActivityMongo extends Model implements ActivityContract
         parent::__construct($attributes);
     }
 
+    protected static function boot()
+    {
+        Activity::saving(function ($model) {
+            $model->url = $model->resolveUrl();
+            $model->user_agent = $model->resolveUserAgent();
+            $model->ip = $model->resolveIp();
+        });
+    }
+
+    public function resolveIp()
+    {
+        return Request::ip();
+    }
+
+    public function resolveUserAgent()
+    {
+        return Request::header('User-Agent');
+    }
+
+    public function resolveUrl()
+    {
+        if (!App::runningInConsole()) {
+            return Request::fullUrlWithQuery([]);
+        }
+        if (in_array('schedule:run', $_SERVER['argv'])) {
+            return 'scheduler';
+        }
+
+        return 'console';
+    }
+
     public function subject(): MorphTo
     {
         if (config('activitylog.subject_returns_soft_deleted_models')) {
