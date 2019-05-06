@@ -22,6 +22,8 @@ class Activity extends Model implements ActivityContract
 
     protected static function boot()
     {
+        parent::boot();
+
         Activity::saving(function ($model) {
             $model->url = $model->resolveUrl();
             $model->user_agent = $model->resolveUserAgent();
